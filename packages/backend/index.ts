@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 
 const CIRCUITS_PATH = join(__dirname, 'circuits', 'selection', 'selection');
@@ -20,7 +20,6 @@ interface RequestBody {
 function generarProverToml(bids: BidInput[]): string {
   const bidsArray = [];
   const validBids = [];
-
   const lotId = bids[0]?.lot_id || 0;
 
   for (let i = 0; i < MAX_BIDS; i++) {
@@ -55,11 +54,15 @@ lot_id = ${lotId}
 function execCommand(command: string, args: string[], cwd: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args, { cwd, shell: true });
+    let stderrOutput = '';
     proc.stdout.on('data', (data) => console.log(`[${command} stdout]: ${data.toString()}`));
-    proc.stderr.on('data', (data) => console.error(`[${command} stderr]: ${data.toString()}`));
+    proc.stderr.on('data', (data) => {
+      stderrOutput += data.toString();
+      console.error(`[${command} stderr]: ${data.toString()}`);
+    });
     proc.on('close', (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`Command ${command} failed with code ${code}`));
+      else reject(new Error(`Command ${command} failed with code ${code}. Stderr: ${stderrOutput}`));
     });
   });
 }
@@ -79,12 +82,10 @@ function execGaraga(args: string[], cwd: string): Promise<string> {
   });
 }
 
-// Lista de orígenes permitidos (CORS)
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
-  'http://192.168.100.3:3000',         // IP local de tu máquina (cámbiala si es diferente)
-  'https://zk-sealed-cattle.vercel.app', // URL de Vercel (reemplázala cuando la tengas)
-  // Agrega más orígenes si es necesario
+  'http://192.168.100.3:3000',
+  'https://zk-sealed-cattle.vercel.app',
 ];
 
 function corsHeaders(request: Request): Record<string, string> {
@@ -96,7 +97,6 @@ function corsHeaders(request: Request): Record<string, string> {
       'Access-Control-Allow-Headers': 'Content-Type',
     };
   }
-  // Por defecto, permitir el primer origen de la lista (útil para desarrollo)
   return {
     'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -105,15 +105,13 @@ function corsHeaders(request: Request): Record<string, string> {
 }
 
 export default {
-  port: 3001,
+  port: parseInt(process.env.PORT || '3001'),
   async fetch(request: Request) {
     const headers = corsHeaders(request);
 
-    // Manejar preflight OPTIONS
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers });
     }
-
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers });
     }
@@ -126,20 +124,38 @@ export default {
         return new Response('Invalid bids', { status: 400, headers });
       }
 
-      // Escribir Prover.toml
       const proverContent = generarProverToml(bids);
       const proverPath = join(CIRCUITS_PATH, 'Prover.toml');
       writeFileSync(proverPath, proverContent);
       console.log('Prover.toml generado:\n', proverContent);
 
-      // Ejecutar comandos
       await execCommand('nargo', ['compile'], CIRCUITS_PATH);
-      await execCommand('nargo', ['execute', 'witness'], CIRCUITS_PATH);
+
+      // Ejecutar nargo execute con reintento si el witness está vacío
+      let witnessOk = false;
+      const witnessPath = join(CIRCUITS_PATH, 'target', 'witness.gz');
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        await execCommand('nargo', ['execute', 'witness'], CIRCUITS_PATH);
+        // Pequeña pausa para que el archivo se escriba
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (existsSync(witnessPath)) {
+          const stats = statSync(witnessPath);
+          console.log(`Witness size after attempt ${attempt}: ${stats.size} bytes`);
+          if (stats.size > 0) {
+            witnessOk = true;
+            break;
+          }
+        }
+        console.log(`Witness vacío, reintentando (${attempt}/2)...`);
+      }
+      if (!witnessOk) {
+        throw new Error('Witness file is empty after 2 attempts');
+      }
+
       await execCommand('bb', ['prove_ultra_keccak_honk', '-b', './target/selection.json', '-w', './target/witness.gz', '-o', './target/proof'], CIRCUITS_PATH);
       await execCommand('bb', ['write_vk_ultra_keccak_honk', '-b', './target/selection.json', '-o', './target/vk'], CIRCUITS_PATH);
       await execCommand('bb', ['proof_as_fields_honk', '-k', './target/vk', '-p', './target/proof', '-o', './target/public_inputs'], CIRCUITS_PATH);
 
-      // Verificar que los archivos necesarios existen
       const requiredFiles = ['vk', 'proof', 'public_inputs'].map(f => join(CIRCUITS_PATH, 'target', f));
       for (const file of requiredFiles) {
         if (!existsSync(file)) {
@@ -147,7 +163,6 @@ export default {
         }
       }
 
-      // Generar calldata con Garaga
       const garagaArgs = [
         'calldata',
         '--system', 'ultra_keccak_honk',

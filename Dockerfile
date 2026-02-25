@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Dependencias base del sistema
+# 1. Dependencias base del sistema (incluye jq)
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libc++abi-dev \
     unzip \
     wget \
+    jq \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
@@ -36,7 +37,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/AztecProtocol/aztec-packages/ma
 ENV PATH="/root/.bb:${PATH}"
 RUN bbup --version 0.67.0
 
-# 6. Instalación de Garaga v0.15.5 (sin verificación de versión)
+# 6. Instalación de Garaga v0.15.5
 RUN python3.10 -m venv /garaga-venv
 ENV PATH="/garaga-venv/bin:${PATH}"
 RUN pip install --upgrade pip && \
