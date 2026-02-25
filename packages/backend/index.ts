@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { writeFileSync, readFileSync, existsSync, statSync } from 'fs';
+import { writeFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 
 const CIRCUITS_PATH = join(__dirname, 'circuits', 'selection', 'selection');
@@ -109,9 +109,15 @@ export default {
   async fetch(request: Request) {
     const headers = corsHeaders(request);
 
+    // Health check para Railway (GET /)
+    if (request.method === 'GET') {
+      return new Response('OK', { status: 200, headers });
+    }
+
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers });
     }
+
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers });
     }
@@ -124,45 +130,49 @@ export default {
         return new Response('Invalid bids', { status: 400, headers });
       }
 
+      // Escribir Prover.toml
       const proverContent = generarProverToml(bids);
       const proverPath = join(CIRCUITS_PATH, 'Prover.toml');
       writeFileSync(proverPath, proverContent);
       console.log('Prover.toml generado:\n', proverContent);
 
+      // Compilar circuito
       await execCommand('nargo', ['compile'], CIRCUITS_PATH);
 
-      // Ejecutar nargo execute con reintento si el witness está vacío
+      // Ejecutar witness con reintento
       let witnessOk = false;
       const witnessPath = join(CIRCUITS_PATH, 'target', 'witness.gz');
       for (let attempt = 1; attempt <= 2; attempt++) {
         await execCommand('nargo', ['execute', 'witness'], CIRCUITS_PATH);
-        // Pequeña pausa para que el archivo se escriba
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar escritura
         if (existsSync(witnessPath)) {
           const stats = statSync(witnessPath);
-          console.log(`Witness size after attempt ${attempt}: ${stats.size} bytes`);
+          console.log(`Witness size (attempt ${attempt}): ${stats.size} bytes`);
           if (stats.size > 0) {
             witnessOk = true;
             break;
           }
         }
-        console.log(`Witness vacío, reintentando (${attempt}/2)...`);
+        console.log(`Witness vacío, reintentando...`);
       }
       if (!witnessOk) {
-        throw new Error('Witness file is empty after 2 attempts');
+        throw new Error('No se pudo generar el witness después de 2 intentos');
       }
 
+      // Comandos de bb
       await execCommand('bb', ['prove_ultra_keccak_honk', '-b', './target/selection.json', '-w', './target/witness.gz', '-o', './target/proof'], CIRCUITS_PATH);
       await execCommand('bb', ['write_vk_ultra_keccak_honk', '-b', './target/selection.json', '-o', './target/vk'], CIRCUITS_PATH);
       await execCommand('bb', ['proof_as_fields_honk', '-k', './target/vk', '-p', './target/proof', '-o', './target/public_inputs'], CIRCUITS_PATH);
 
+      // Verificar archivos
       const requiredFiles = ['vk', 'proof', 'public_inputs'].map(f => join(CIRCUITS_PATH, 'target', f));
       for (const file of requiredFiles) {
         if (!existsSync(file)) {
-          throw new Error(`Missing file: ${file}`);
+          throw new Error(`Archivo faltante: ${file}`);
         }
       }
 
+      // Generar calldata con Garaga
       const garagaArgs = [
         'calldata',
         '--system', 'ultra_keccak_honk',
