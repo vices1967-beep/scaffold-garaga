@@ -1,6 +1,5 @@
 FROM ubuntu:22.04
 
-# Evita preguntas interactivas durante la instalación de paquetes
 ENV DEBIAN_FRONTEND=noninteractive
 
 # ============================================
@@ -14,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libc++abi-dev \
     unzip \
     wget \
+    jq \
     python3.10 \
     python3.10-venv \
     python3.10-dev \
@@ -34,11 +34,13 @@ ENV PATH="/root/.nargo/bin:${PATH}"
 RUN /root/.nargo/bin/noirup -v 1.0.0-beta.1
 
 # ============================================
-# Instalación de bb (Barretenberg) v0.67.0 usando bbup
+# Instalación de bb (Barretenberg) v0.67.0 (descarga directa del binario)
 # ============================================
-RUN curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/bbup/install | bash
-ENV PATH="/root/.bb:${PATH}"
-RUN bbup --version 0.67.0
+WORKDIR /tmp
+RUN wget https://github.com/AztecProtocol/aztec-packages/releases/download/bb-0.67.0/bb-0.67.0-linux-amd64 \
+    && mv bb-0.67.0-linux-amd64 /usr/local/bin/bb \
+    && chmod +x /usr/local/bin/bb
+WORKDIR /app
 
 # ============================================
 # Instalación de Garaga (Python 3.10) v0.15.5
@@ -53,15 +55,13 @@ RUN pip install garaga==0.15.5
 # ============================================
 WORKDIR /app
 
-# Copia los archivos de dependencias del backend (desde packages/backend)
 COPY packages/backend/package.json packages/backend/bun.lock* ./
 RUN bun install
 
-# Copia el resto del código del backend
 COPY packages/backend/ .
 
 # ============================================
-# Exponer el puerto (Railway usará la variable PORT)
+# Puerto y comando de inicio
 # ============================================
 EXPOSE 3001
 CMD ["bun", "run", "index.ts"]
