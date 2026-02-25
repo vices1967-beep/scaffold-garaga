@@ -1,0 +1,12 @@
+bids = [
+    { amount = 150, nonce = 456, bidder = 8738, lot_id = 1 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 },
+    { amount = 0, nonce = 0, bidder = 0, lot_id = 0 }
+]
+valid_bids = [true, false, false, false, false, false, false, false]
+lot_id = 1
