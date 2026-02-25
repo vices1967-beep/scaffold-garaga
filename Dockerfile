@@ -34,15 +34,11 @@ ENV PATH="/root/.nargo/bin:${PATH}"
 RUN /root/.nargo/bin/noirup -v 1.0.0-beta.1
 
 # ============================================
-# Instalación de bb (Barretenberg) v0.67.0 (descarga directa)
+# Instalación de bb (Barretenberg) v0.67.0 usando bbup
 # ============================================
-WORKDIR /tmp
-RUN wget https://github.com/AztecProtocol/aztec-packages/releases/download/bb-0.67.0/bb-0.67.0-linux-amd64.tar.gz \
-    && tar -xzf bb-0.67.0-linux-amd64.tar.gz \
-    && mv bb /usr/local/bin/bb \
-    && chmod +x /usr/local/bin/bb \
-    && rm bb-0.67.0-linux-amd64.tar.gz
-WORKDIR /app
+RUN curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/bbup/install | bash
+ENV PATH="/root/.bb:${PATH}"
+RUN bbup --version 0.67.0
 
 # ============================================
 # Instalación de Garaga (Python 3.10) v0.15.5
@@ -65,7 +61,7 @@ RUN bun install
 COPY packages/backend/ .
 
 # ============================================
-# Configuración del puerto y comando de inicio
+# Exponer el puerto (Railway usará la variable PORT)
 # ============================================
 EXPOSE 3001
 CMD ["bun", "run", "index.ts"]
