@@ -1,0 +1,6 @@
+[package]
+name = "minimal"
+type = "bin"
+authors = [""]
+
+[dependencies]
