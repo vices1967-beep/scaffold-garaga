@@ -7,13 +7,13 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y python3 python3-pip python3-venv curl unzip && \
     rm -rf /var/lib/apt/lists/*
 
-# Instala Noir (nargo) - versión 1.0.0-beta.1 (ajusta si es otra)
+# Instala Noir (nargo)
 RUN curl -L https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.1/nargo-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin && \
-    mv /usr/local/bin/nargo-x86_64-unknown-linux-gnu /usr/local/bin/nargo
+    chmod +x /usr/local/bin/nargo
 
-# Instala Barretenberg (bb) - versión 0.67.0 (ajusta si es otra)
+# Instala Barretenberg (bb)
 RUN curl -L https://github.com/AztecProtocol/barretenberg/releases/download/v0.67.0/bb-x86_64-linux.tar.gz | tar xz -C /usr/local/bin && \
-    mv /usr/local/bin/bb-x86_64-linux /usr/local/bin/bb
+    chmod +x /usr/local/bin/bb
 
 # Crea entorno virtual para Garaga
 RUN python3 -m venv /app/garaga-venv
