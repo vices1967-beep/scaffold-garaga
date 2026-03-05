@@ -1,37 +1,34 @@
-# Usa imagen oficial de Bun
 FROM oven/bun:latest
 
 WORKDIR /app
 
-# Instala Python, pip, curl y otras utilidades
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv curl unzip && \
+# Instala Python, pip, curl y otras utilidades (incluyendo bash)
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv curl unzip bash && \
     rm -rf /var/lib/apt/lists/*
 
-# Instala Noir (nargo)
-RUN curl -L https://github.com/noir-lang/noir/releases/download/v1.0.0-beta.1/nargo-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin && \
-    chmod +x /usr/local/bin/nargo
+# Instala noirup y nargo (versión 1.0.0-beta.1)
+RUN curl -fsSL https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+ENV PATH="/root/.nargo/bin:$PATH"
+RUN /bin/bash -c "source /root/.bashrc && noirup --version 1.0.0-beta.1"
 
-# Instala Barretenberg (bb)
-RUN curl -L https://github.com/AztecProtocol/barretenberg/releases/download/v0.67.0/bb-x86_64-linux.tar.gz | tar xz -C /usr/local/bin && \
-    chmod +x /usr/local/bin/bb
+# Instala bbup y bb (versión 0.67.0)
+RUN curl -fsSL https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/bbup/install | bash
+ENV PATH="/root/.bb:$PATH"
+RUN /bin/bash -c "source /root/.bashrc && bbup --version 0.67.0"
 
 # Crea entorno virtual para Garaga
 RUN python3 -m venv /app/garaga-venv
 ENV PATH="/app/garaga-venv/bin:$PATH"
 
-# Instala Garaga con pip (según el código, se espera en el venv)
+# Instala Garaga con pip
 RUN pip install garaga
 
 # Copia los archivos de dependencias de Node
 COPY package.json bun.lock ./
-# Instala dependencias de Node con Bun (usando lockfile para reproducibilidad)
 RUN bun install --frozen-lockfile
 
 # Copia el resto del código (circuitos, src, etc.)
 COPY . .
 
-# Expone el puerto (Render asignará dinámicamente)
 EXPOSE 3001
-
-# Comando para iniciar el servidor
 CMD ["bun", "run", "src/index.ts"]
