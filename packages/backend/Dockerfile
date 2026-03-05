@@ -13,10 +13,10 @@ ENV PATH="/root/.nargo/bin:$PATH"
 # Ejecuta noirup para instalar nargo versión 1.0.0-beta.1
 RUN noirup --version 1.0.0-beta.1
 
-# Instala bbup (se instalará previsiblemente en /root/.bb/bin/bbup)
+# Instala bbup (se instalará en /root/.bbup/bin/bbup)
 RUN curl -fsSL https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/bbup/install | bash
-# Añade el directorio de bbup al PATH
-ENV PATH="/root/.bb/bin:$PATH"
+# Añade el directorio de bbup al PATH (ruta corregida)
+ENV PATH="/root/.bbup/bin:$PATH"
 # Ejecuta bbup para instalar bb versión 0.67.0
 RUN bbup --version 0.67.0
 
