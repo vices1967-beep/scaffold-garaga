@@ -6,19 +6,19 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y python3 python3-pip python3-venv curl unzip bash git && \
     rm -rf /var/lib/apt/lists/*
 
-# Instala noirup
+# Instala noirup (se instalará en /root/.nargo/bin/noirup)
 RUN curl -fsSL https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
-# Añade nargo al PATH (se instalará en /root/.nargo/bin)
+# Añade el directorio de noirup al PATH
 ENV PATH="/root/.nargo/bin:$PATH"
 # Ejecuta noirup para instalar nargo versión 1.0.0-beta.1
-RUN /root/.noirup/bin/noirup --version 1.0.0-beta.1
+RUN noirup --version 1.0.0-beta.1
 
-# Instala bbup
+# Instala bbup (se instalará previsiblemente en /root/.bb/bin/bbup)
 RUN curl -fsSL https://raw.githubusercontent.com/AztecProtocol/aztec-packages/master/barretenberg/bbup/install | bash
-# Añade bb al PATH (se instalará en /root/.bb)
-ENV PATH="/root/.bb:$PATH"
+# Añade el directorio de bbup al PATH
+ENV PATH="/root/.bb/bin:$PATH"
 # Ejecuta bbup para instalar bb versión 0.67.0
-RUN /root/.bbup/bin/bbup --version 0.67.0
+RUN bbup --version 0.67.0
 
 # Crea entorno virtual para Garaga
 RUN python3 -m venv /app/garaga-venv
