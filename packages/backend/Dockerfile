@@ -2,10 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala dependencias del sistema necesarias, incluyendo libc++ para bb
+# Instala dependencias del sistema, incluyendo jq y libc++
 RUN apt-get update && apt-get install -y \
     curl unzip bash git build-essential \
-    libc++-dev libc++abi-dev \
+    libc++-dev libc++abi-dev jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala Bun
