@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala dependencias del sistema, incluyendo jq y libc++
+# Instala dependencias del sistema necesarias
 RUN apt-get update && apt-get install -y \
     curl unzip bash git build-essential \
     libc++-dev libc++abi-dev jq \
@@ -34,15 +34,18 @@ RUN BB_PATH=$(find /root -name bb -type f) && \
 RUN python3 -m venv /app/garaga-venv
 ENV PATH="/app/garaga-venv/bin:$PATH"
 
-# Instala Garaga con pip
-RUN pip install garaga
+# Instala Garaga con la versión específica que funciona en Codespace (0.15.5)
+RUN pip install garaga==0.15.5
 
 # Copia los archivos de dependencias de Node
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Copia el resto del código
+# Copia el resto del código (circuitos, index.ts, etc.)
 COPY . .
 
+# Expone el puerto que usará Render (asignado automáticamente)
 EXPOSE 3001
+
+# Comando para iniciar el backend (index.ts está en la raíz de /app)
 CMD ["bun", "run", "index.ts"]
