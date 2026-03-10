@@ -1,13 +1,13 @@
 
 bids = [
-    { amount = 1000, nonce = 71665, bidder = "0x02cc7dfc03d295f936736082fad6302e28ad9dfe74bbc6eb353dbc1d38a61b62", lot_id = 6 },
-    { amount = 999, nonce = 460400, bidder = "0x057d1eb44af684dc6fe215b9781728966e7ee4d6995b9134a71ca30526397002", lot_id = 6 },
-    { amount = 998, nonce = 6991, bidder = "0x0795667111a9439f7e07d9b45fa2e01ce7300d5d857469a0a0779a7aa7598fa2", lot_id = 6 },
-    { amount = 998, nonce = 6991, bidder = "0x0795667111a9439f7e07d9b45fa2e01ce7300d5d857469a0a0779a7aa7598fa2", lot_id = 6 },
-    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 6 },
-    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 6 },
-    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 6 },
-    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 6 }
+    { amount = 50000, nonce = 27040, bidder = "0x05f1ac2f722c0af3ce57828e1fcb0ace93ca7610947f595b3828e9c7116980fc", lot_id = 2 },
+    { amount = 75000, nonce = 801272, bidder = "0x00dfd4447d21921174aff9647e9ff5a86bcc3dd14aa6349019f43fc854bfcafa", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 },
+    { amount = 0, nonce = 0, bidder = "0x0", lot_id = 2 }
 ]
-valid_bids = [true, true, true, true, false, false, false, false]
-lot_id = 6
+valid_bids = [true, true, false, false, false, false, false, false]
+lot_id = 2

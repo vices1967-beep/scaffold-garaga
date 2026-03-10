@@ -1,5 +1,3 @@
-use poseidon::poseidon::bn254::hash_4;
-
 global MAX_BIDS: u32 = 8;
 
 struct Bid {
@@ -13,18 +11,19 @@ fn main(
     bids: [Bid; MAX_BIDS],
     valid_bids: [bool; MAX_BIDS],
     lot_id: Field
-) -> pub [Field; MAX_BIDS] {
-    let mut computed_hashes = [0; MAX_BIDS];
-    
+) -> pub [Field; 2] {
+    // Find maximum bid among valid ones
+    let mut max_amount: u64 = 0;
+    let mut max_bidder: Field = 0;
     for i in 0..MAX_BIDS {
         if valid_bids[i] {
-            computed_hashes[i] = hash_4([
-                bids[i].amount as Field,
-                bids[i].nonce,
-                bids[i].bidder,
-                lot_id
-            ]);
+            if bids[i].amount > max_amount {
+                max_amount = bids[i].amount;
+                max_bidder = bids[i].bidder;
+            }
         }
     }
-    computed_hashes
+
+    // Return winner address and amount as public outputs
+    [max_bidder, max_amount as Field]
 }
